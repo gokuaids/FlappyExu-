@@ -84,10 +84,14 @@ input[type=range]::-moz-range-thumb{width:max(16px,calc(var(--k)*10px));height:m
 .btns{display:flex;gap:calc(var(--k)*8px);align-items:center}
 #rank{background:rgba(7,4,13,.95);z-index:5;padding:calc(var(--k)*12px) calc(var(--k)*14px);gap:calc(var(--k)*8px)}
 #rs{margin:0;min-height:calc(var(--k)*16px);font-size:calc(var(--k)*6.5px);line-height:1.7;color:var(--gold)}
-#rme,#rform{display:flex;gap:calc(var(--k)*6px);align-items:center;justify-content:center;width:100%}
+#rme{display:flex;gap:calc(var(--k)*6px);align-items:center;justify-content:center;width:100%}
+#rauth{display:flex;flex-direction:column;gap:calc(var(--k)*6px);width:100%}
+#rauth .btns{justify-content:center}
+#rlogin{background:linear-gradient(#e0243f,#98101f);border-bottom-color:#50091a}
 #rmn{font-size:calc(var(--k)*8px);color:#fff}
-#rnick{flex:1;min-width:0;min-height:44px;font:calc(var(--k)*9px) var(--px);color:var(--ink);background:#14091c;border:2px solid #2a1838;border-radius:calc(var(--k)*3px);padding:calc(var(--k)*6px);text-transform:uppercase;user-select:text;-webkit-user-select:text;touch-action:auto}
-#rl{width:100%;max-height:calc(var(--k)*270px);overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;margin:0;padding:calc(var(--k)*6px);list-style:none;font-size:calc(var(--k)*7px);background:rgba(255,255,255,.05);border:2px solid #2a1838;border-radius:calc(var(--k)*4px);text-align:left}
+#rpass{text-transform:none!important}
+#rnick,#rpass{width:100%;min-width:0;min-height:44px;font:calc(var(--k)*9px) var(--px);color:var(--ink);background:#14091c;border:2px solid #2a1838;border-radius:calc(var(--k)*3px);padding:calc(var(--k)*6px);text-transform:uppercase;user-select:text;-webkit-user-select:text;touch-action:auto}
+#rl{width:100%;max-height:calc(var(--k)*210px);overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;margin:0;padding:calc(var(--k)*6px);list-style:none;font-size:calc(var(--k)*7px);background:rgba(255,255,255,.05);border:2px solid #2a1838;border-radius:calc(var(--k)*4px);text-align:left}
 #rl li{display:grid;grid-template-columns:calc(var(--k)*22px) 1fr auto calc(var(--k)*24px);gap:calc(var(--k)*6px);align-items:center;padding:calc(var(--k)*5px) calc(var(--k)*4px);color:#cdbfe0}
 #rl li+li{border-top:1px solid #2a1838}
 #rl li b{font-weight:400;color:#fff}
@@ -172,8 +176,8 @@ input[type=range]::-moz-range-thumb{width:max(16px,calc(var(--k)*10px));height:m
     <h2>RANKING</h2>
     <p class="ver">TOP 30 JOGADORES</p>
     <p id="rs"></p>
-    <div id="rme" hidden><span id="rmn"></span><button id="rchg" class="big alt">TROCAR NOME</button></div>
-    <div id="rform" hidden><input id="rnick" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SEU NOME" aria-label="Seu nome no ranking"><button id="rsave" class="big alt">SALVAR</button></div>
+    <div id="rme" hidden><span id="rmn"></span><button id="rout" class="big alt">SAIR</button></div>
+    <div id="rauth" hidden><input id="rnick" maxlength="12" autocomplete="username" autocapitalize="characters" spellcheck="false" placeholder="NOME" aria-label="Nome de usuário"><input id="rpass" type="password" maxlength="64" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="SENHA" aria-label="Senha"><div class="btns"><button id="rlogin" class="big alt">ENTRAR</button><button id="rreg" class="big alt">CRIAR CONTA</button></div></div>
     <ol id="rl"></ol>
     <button id="rankok" class="big">VOLTAR</button>
   </section>
@@ -668,7 +672,7 @@ function die(kind){
   const old=maxF;if(fase>maxF){maxF=fase;store.set('fbu-fase',maxF)}
   const nu=CH.filter(c=>c.need>old&&c.need<=maxF);
   el.unl.textContent=nu.length?'DESBLOQUEOU: '+nu.map(c=>c.n.toUpperCase()).join(' + ')+'!':'';
-  if(!nu.length&&rk.db&&rk.uid&&rk.can!==false&&!rk.nick)el.unl.textContent='CRIE SEU NOME NO 🏆 RANKING PARA SALVAR SEUS PONTOS';
+  if(!nu.length&&!rk.token)el.unl.textContent='ENTRE NO 🏆 RANKING PARA SALVAR SEUS PONTOS';
   push();
   if(nu.length)setTimeout(Sfx.fase,700);
   el.fs.textContent=score;el.fb.textContent=best;el.ff.textContent=fase;el.bm.textContent=best;refresh();
@@ -721,7 +725,7 @@ function pwUI(){if(hudEdit)return;const P=view.pw,pp=P.act>0?Math.round(P.act/P.
 function act(){
   Sfx.unlock();
   if(st==='menu')ready();
-  else if(st==='ready'){st='play';show(el.hint,false);Physics.flap(bird);flapFx()}
+  else if(st==='ready'){st='play';show(el.hint,false);Physics.flap(bird);flapFx();runStart()}
   else if(st==='play'){Physics.flap(bird);flapFx()}
   else if(st==='dead'&&deadT>.7)ready();
 }
@@ -828,76 +832,91 @@ function closeNews(){newsOpen=false;show(news,false)}
 nok.addEventListener('click',e=>{e.currentTarget.blur();Sfx.unlock();closeNews()});
 $('newsbtn').addEventListener('click',e=>{e.currentTarget.blur();Sfx.unlock();newsOpen=true;show(news,true);nok.focus()});
 nok.focus();
-/* Ranking: a conta é a do viewer (claude.ai), o nome é um apelido escolhido; dados no db do artifact. */
-const rk={db:null,uid:null,can:null,nick:'',sent:-1,fase:1,busy:false,dirty:false,edit:false,loaded:false,rows:[],err:''};
-const rank=$('rank'),rl=$('rl'),rs=$('rs'),rform=$('rform'),rme=$('rme'),rnick=$('rnick');let rankOpen=false;
-const cleanNick=v=>String(v||'').toUpperCase().replace(/[^A-Z0-9_ -]/g,'').replace(/\s+/g,' ').trim().slice(0,12);
+/* Ranking global: conta própria (nome + senha) guardada no servidor (/api, Vercel + Supabase). */
+const rk={token:store.get('fbu-tk',''),nick:'',best:-1,rows:[],loaded:false,err:'',busy:false,runP:null};
+const rank=$('rank'),rl=$('rl'),rs=$('rs'),rauth=$('rauth'),rme=$('rme'),rnick=$('rnick'),rpass=$('rpass');let rankOpen=false;
+const stripAcc=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9_ -]/g,'');
+const cleanNick=v=>stripAcc(v).replace(/\s+/g,' ').trim().slice(0,12);
+const ERR={bad_nick:'NOME: 2 A 12 LETRAS, NÚMEROS, _ OU -',bad_pass:'SENHA: DE 4 A 64 CARACTERES',taken:'ESSE NOME JÁ EXISTE. ESCOLHA OUTRO',invalid:'NOME OU SENHA INCORRETOS',locked:'MUITAS TENTATIVAS. ESPERE 10 MINUTOS',limit:'MUITAS CONTAS CRIADAS. TENTE MAIS TARDE',unauth:'SESSÃO EXPIRADA. ENTRE DE NOVO',config:'SERVIDOR SEM BANCO DE DADOS CONFIGURADO'};
+const errMsg=e=>ERR[e&&e.code]||'SEM CONEXÃO COM O SERVIDOR. TENTE DE NOVO';
+async function api(path,body){
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),10000),h={};
+  if(body)h['content-type']='application/json';
+  if(rk.token)h.authorization='Bearer '+rk.token;
+  try{
+    const r=await fetch('/api/'+path,{method:body?'POST':'GET',headers:h,body:body?JSON.stringify(body):undefined,signal:ctl.signal,cache:'no-store'});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){const e=new Error(d.error||'http');e.code=d.error;e.status=r.status;throw e}
+    return d;
+  }finally{clearTimeout(tm)}
+}
+function setMe(m){if(m){rk.nick=m.nick;rk.best=m.best}else{rk.nick='';rk.best=-1}}
+function dropSession(){rk.token='';rk.runP=null;store.set('fbu-tk','');setMe(null)}
 function rkRender(){
-  const w=!!(rk.db&&rk.uid&&rk.can!==false);
-  let m=rk.err;
-  if(!m){
-    if(!rk.db)m='O RANKING SÓ FUNCIONA COM A CONTA CLAUDE CONECTADA, ABRINDO O JOGO PELO LINK DO CLAUDE.AI';
-    else if(!w)m='VOCÊ PODE VER O RANKING, MAS NÃO TEM PERMISSÃO PARA ENTRAR NELE';
-    else if(!rk.nick||rk.edit)m='ESCOLHA SEU NOME (2 A 12 LETRAS OU NÚMEROS)';
-    else m='SEU RECORDE: '+Math.max(0,rk.sent)+'. ELE SOBE SOZINHO QUANDO VOCÊ BATE O RECORDE';
-  }
-  rs.textContent=m;
-  rform.hidden=!(w&&(!rk.nick||rk.edit));
-  rme.hidden=!(w&&rk.nick&&!rk.edit);
-  $('rmn').textContent='👤 '+rk.nick;
+  const out=!rk.token;
+  rs.textContent=rk.err||(out?'CRIE UMA CONTA OU ENTRE PARA SALVAR SEU RECORDE NO RANKING GLOBAL':'SEU RECORDE NO RANKING: '+Math.max(0,rk.best)+'. ELE SOBE SOZINHO QUANDO VOCÊ BATE O RECORDE');
+  rauth.hidden=!out;rme.hidden=out;
+  $('rmn').textContent='👤 '+(rk.nick||'...');
   rl.textContent='';
-  if(!rk.rows.length){const li=document.createElement('li');li.className='emp';li.textContent=!rk.db?'':rk.loaded?'NINGUÉM NO RANKING AINDA. SEJA O PRIMEIRO!':'CARREGANDO...';rl.append(li)}
+  if(!rk.rows.length){const li=document.createElement('li');li.className='emp';li.textContent=rk.loaded?'NINGUÉM NO RANKING AINDA. SEJA O PRIMEIRO!':rk.err?'':'CARREGANDO...';rl.append(li)}
   rk.rows.forEach((r,i)=>{
     const li=document.createElement('li'),a=document.createElement('span'),b=document.createElement('span'),c=document.createElement('b'),d=document.createElement('span');
     a.textContent=i<3?['🥇','🥈','🥉'][i]:String(i+1);b.textContent=r.nick;c.textContent=r.best;d.textContent='F'+r.fase;
-    if(r.id===rk.uid)li.className='me';
+    if(r.me)li.className='me';
     li.append(a,b,c,d);rl.append(li);
   });
 }
-async function push(){
-  if(!rk.db||!rk.uid||!rk.nick||rk.can===false||rk.busy)return;
-  if(best<=rk.sent&&!rk.dirty)return;
-  rk.busy=true;
-  const b=Math.max(best,rk.sent,0),f=Math.max(maxF,rk.fase);
-  try{await rk.db.doc('scores/'+rk.uid).set({nick:rk.nick,best:b,fase:f,char:view.char,at:Date.now()});rk.sent=b;rk.fase=f;rk.dirty=false;rk.err=''}
-  catch(e){rk.err='NÃO FOI POSSÍVEL SALVAR SUA PONTUAÇÃO';if(e&&e.code==='invalid_argument')rk.can=false;rk.dirty=false}
-  rk.busy=false;rkRender();
-  if(best>rk.sent&&!rk.err)push();
-}
-async function saveNick(){
-  const v=cleanNick(rnick.value);
-  if(v.length<2){rk.err='USE PELO MENOS 2 LETRAS OU NÚMEROS';rkRender();return}
-  rk.nick=v;rk.edit=false;rk.dirty=true;rk.err='';rkRender();await push();
-}
-async function rkInit(){
-  if(!window.claude||!claude.use){rkRender();return}
+async function rkLoad(){
   try{
-    const [db,u]=await Promise.all([claude.use('db'),claude.use('user')]);
-    if(!db){rkRender();return}
-    rk.db=db;
-    if(u){rk.uid=await u.id();rk.can=await u.can('data.write')}
-    if(rk.uid&&rk.can!==false){
-      try{const sn=await db.doc('scores/'+rk.uid).get();if(sn.exists){const d=sn.data()||{};rk.nick=cleanNick(d.nick);rk.sent=+d.best||0;rk.fase=+d.fase||1}}catch(e){}
-    }
-    const tm=setTimeout(()=>{rk.err='SEM RESPOSTA DO SERVIDOR. TENTE DE NOVO MAIS TARDE';rkRender()},10000);
-    db.collection('scores').orderBy('best','desc').limit(30).onSnapshot(sn=>{
-      clearTimeout(tm);rk.err='';rk.loaded=true;
-      rk.rows=sn.docs.map(d=>{const v=d.data()||{};return{id:d.id,nick:cleanNick(v.nick)||'?',best:+v.best||0,fase:+v.fase||1}}).filter(r=>r.best>0);
-      rkRender();
-    },()=>{clearTimeout(tm);rk.err='ERRO AO CARREGAR O RANKING';rkRender()});
-    rkRender();push();
-  }catch(e){rkRender()}
+    const d=await api('ranking');
+    rk.rows=d.rows||[];rk.loaded=true;rk.err='';
+    if(rk.token){if(d.me)setMe(d.me);else{dropSession();rk.err=ERR.unauth}}
+  }catch(e){rk.err=errMsg(e)}
+  rkRender();
 }
-function openRank(){Sfx.unlock();rankOpen=true;rnick.value=rk.nick;rkRender();show(rank,true)}
-function closeRank(){rankOpen=false;rk.edit=false;rnick.blur();show(rank,false);rkRender()}
+async function auth(kind){
+  if(rk.busy)return;
+  const nick=cleanNick(rnick.value),pw=rpass.value;
+  if(nick.length<2){rk.err=ERR.bad_nick;rkRender();return}
+  if(pw.length<4||pw.length>64){rk.err=ERR.bad_pass;rkRender();return}
+  rk.busy=true;rs.textContent='AGUARDE...';
+  try{
+    const d=await api(kind,{nick,password:pw});
+    rk.token=d.token;store.set('fbu-tk',d.token);setMe(d.me);rk.err='';rnick.value='';rpass.value='';
+  }catch(e){rk.err=errMsg(e)}
+  rk.busy=false;rkRender();
+  if(rk.token)rkLoad();
+}
+function logout(){dropSession();rk.err='';rkRender();rkLoad()}
+/* Cada partida pede um bilhete ao servidor no primeiro toque; o servidor usa a hora dele para validar a pontuação. */
+function runStart(){rk.runP=rk.token?api('run',{}).then(d=>d.run).catch(()=>null):null}
+async function push(){
+  const sc=score,p=rk.runP;rk.runP=null;
+  if(!rk.token||!p||sc<1||sc<=rk.best)return;
+  const run=await p;if(!run)return;
+  try{
+    const d=await api('score',{run,score:sc});
+    rk.best=d.best;
+    if(d.improved&&d.pos&&st==='dead'&&!/^DESBLOQUEOU/.test(el.unl.textContent))el.unl.textContent='🏆 NOVO RECORDE NO RANKING: #'+d.pos;
+    if(rankOpen)rkLoad();else rkRender();
+  }catch(e){
+    if(e.status===401){dropSession();rk.err=ERR.unauth;rkRender()}
+    else if(st==='dead'&&!/^DESBLOQUEOU/.test(el.unl.textContent))el.unl.textContent='NÃO FOI POSSÍVEL SALVAR NO RANKING';
+  }
+}
+function openRank(){Sfx.unlock();rankOpen=true;rk.err='';rkRender();show(rank,true);rkLoad()}
+function closeRank(){rankOpen=false;rnick.blur();rpass.blur();show(rank,false)}
 $('rankbtn').addEventListener('click',e=>{e.currentTarget.blur();openRank()});
 $('rank2').addEventListener('click',e=>{e.currentTarget.blur();openRank()});
 $('rankok').addEventListener('click',e=>{e.currentTarget.blur();closeRank()});
-$('rsave').addEventListener('click',e=>{e.currentTarget.blur();saveNick()});
-$('rchg').addEventListener('click',e=>{e.currentTarget.blur();rk.edit=true;rkRender();rnick.value=rk.nick;rnick.focus()});
-rnick.addEventListener('input',()=>{rnick.value=rnick.value.toUpperCase().replace(/[^A-Z0-9_ -]/g,'')});
-rnick.addEventListener('keydown',e=>{if(e.key==='Enter')saveNick()});
-rkInit();
+$('rlogin').addEventListener('click',e=>{e.currentTarget.blur();auth('login')});
+$('rreg').addEventListener('click',e=>{e.currentTarget.blur();auth('register')});
+$('rout').addEventListener('click',e=>{e.currentTarget.blur();logout()});
+rnick.addEventListener('input',()=>{rnick.value=stripAcc(rnick.value)});
+rnick.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();rpass.focus()}});
+rpass.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();auth('login')}});
+rkRender();rkLoad();
+setInterval(()=>{if(rankOpen)rkLoad()},15000);
 el.pwr.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(hudEdit){drag=true;try{el.pwr.setPointerCapture(e.pointerId)}catch(_){}return}power()});
 el.menu.addEventListener('pointerdown',e=>{if(e.target===el.menu){Sfx.unlock();ready()}});
 cv.addEventListener('pointerdown',e=>{e.preventDefault();act()});
